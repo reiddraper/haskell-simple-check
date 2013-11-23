@@ -14,3 +14,7 @@ import Test.SimpleCheck.Gen
 
 class Arbitrary a where
   arbitrary :: Gen (RoseTree a)
+
+------------------------------------------------------------------------------
+-- Instances: Arbitrary
+------------------------------------------------------------------------------
