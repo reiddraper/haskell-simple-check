@@ -1,0 +1,32 @@
+Name:                   simple-check
+Version:                0.0.1
+Author:                 Reid Draper<reiddraper@gmail.com>
+Maintainer:             Reid Draper<reiddraper@gmail.com>
+License:                BSD3
+License-File:           LICENSE
+Cabal-Version:          >= 1.10
+Build-Type:             Simple
+
+Library
+  Default-Language:     Haskell2010
+  HS-Source-Dirs:       src
+  GHC-Options:          -Wall
+  Exposed-Modules:      Test.SimpleCheck
+  Other-Modules:        Test.SimpleCheck.Internal
+                      , Test.SimpleCheck.Arbitrary
+                      , Test.SimpleCheck.Gen
+  Build-Depends:        base >= 4 && < 5
+
+Test-Suite test
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  Hs-Source-Dirs:       src
+                      , test
+  Ghc-Options:          -Wall
+  Main-Is:              Test.hs
+  Build-Depends:        base == 4.6.0.1
+                      , tasty == 0.4.0.1
+                      , tasty-quickcheck == 0.3.1
+
+Source-Repository head
+  Type:                 git
