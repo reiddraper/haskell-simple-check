@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveFoldable #-}
-
 module Test.SimpleCheck.Gen
     (
       RoseTree(..)
@@ -10,6 +8,7 @@ module Test.SimpleCheck.Gen
 
     , Gen(..)
     , choose
+    , sized
 
     , sample
     , sample'
@@ -37,13 +36,9 @@ import Data.Traversable
   , sequence
   )
 
-import Data.Foldable
-  ( Foldable(..)
-  )
-
 import Control.Applicative
-  ( Applicative(..)
-  , (<$>)
+  (
+    Applicative(..)
   )
 
 import Test.SimpleCheck.Gen.Internal
@@ -117,6 +112,10 @@ sample g =
 -- | Generates a random element in the given inclusive range.
 choose :: (Random a, Integral a) => (a,a) -> Gen a
 choose rng = Gen $ MkGen (\r _ -> mktree r rng)
+
+-- | Used to construct generators that depend on the size parameter.
+sized :: (Int -> Gen a) -> Gen a
+sized f = Gen (MkGen (\r n -> let Gen (MkGen m) = f n in m r n))
 
 mktree :: (Random a, Integral a) => StdGen -> (a, a) -> RoseTree a
 mktree r rng = filterRose (mkfilter rng) $ integralRoseTree x

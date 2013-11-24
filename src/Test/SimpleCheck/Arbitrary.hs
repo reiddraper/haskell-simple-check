@@ -4,8 +4,10 @@ module Test.SimpleCheck.Arbitrary
     ) where
 
 import Test.SimpleCheck.Gen
-    ( RoseTree(..)
-    , Gen(..)
+    (
+      Gen(..)
+    , choose
+    , sized
     )
 
 ------------------------------------------------------------------------------
@@ -13,8 +15,11 @@ import Test.SimpleCheck.Gen
 ------------------------------------------------------------------------------
 
 class Arbitrary a where
-  arbitrary :: Gen (RoseTree a)
+  arbitrary :: Gen a
 
 ------------------------------------------------------------------------------
 -- Instances: Arbitrary
 ------------------------------------------------------------------------------
+
+instance Arbitrary Integer where
+    arbitrary = sized $ \x -> choose (0 :: Integer, fromIntegral x)

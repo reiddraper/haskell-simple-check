@@ -12,8 +12,8 @@ module Test.SimpleCheck.Gen.Internal
   ) where
 
 import Data.Traversable
-  ( Traversable(..)
-  , sequence
+  (
+    Traversable(..)
   )
 
 import Data.Monoid
