@@ -14,7 +14,11 @@ import Test.SimpleCheck.Gen
     (
       choose
     , sample'
-    , integralRoseTree
+    )
+
+import Test.SimpleCheck.Gen.Internal
+    (
+      integralRoseTree
     , uniqueRose
     )
 
