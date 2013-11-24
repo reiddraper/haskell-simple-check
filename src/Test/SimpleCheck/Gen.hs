@@ -5,9 +5,13 @@ module Test.SimpleCheck.Gen
       RoseTree(..)
     , joinRose
     , roseRoot
+    , filterRose
 
     , Gen(..)
     , choose
+
+    , sample
+    , sample'
     ) where
 
 import Prelude hiding (sequence)
@@ -21,6 +25,7 @@ import System.Random
   , StdGen
   , randomR
   , split
+  , newStdGen
   )
 
 import Control.Monad
@@ -72,21 +77,33 @@ joinRose (RoseTree (RoseTree y ys) xs) =
 roseRoot :: RoseTree a -> a
 roseRoot (RoseTree x _children) = x
 
+roseChildren :: RoseTree a -> [RoseTree a]
+roseChildren (RoseTree _root children) = children
+
+-- | Return a new 'RoseTree' where all of the nodes
+-- pass the predicate. Currently, if a node does
+-- not pass the predicate, its children are removed too.
+-- This probably not ideal behavior, but it's non-obvious
+-- what should be done instead.
+filterRose :: (a -> Bool) -> RoseTree a -> RoseTree a
+filterRose f (RoseTree root children) =
+    RoseTree root $ map (filterRose f) $ filter (f . roseRoot) children
+
 ------------------------------------------------------------------------------
 -- Type: Gen
 ------------------------------------------------------------------------------
 
-newtype Gen a = MkGen {unGen :: StdGen -> Int -> a} deriving (Show)
+newtype Generator a = MkGen {_unGen :: StdGen -> Int -> a} deriving (Show)
 
-instance Functor Gen where
+instance Functor Generator where
   fmap f (MkGen h) =
     MkGen (\r n -> f (h r n))
 
-instance Applicative Gen where
+instance Applicative Generator where
   pure  = return
   (<*>) = ap
 
-instance Monad Gen where
+instance Monad Generator where
   return x = MkGen (\_rnd _size -> x)
 
   MkGen m >>= k =
@@ -97,27 +114,45 @@ instance Monad Gen where
     )
 
 ------------------------------------------------------------------------------
--- Type: RoseGen
+-- Type: Gen
 ------------------------------------------------------------------------------
 
-newtype RoseGen a = RoseGen { getRoseGen :: Gen (RoseTree a) }
+newtype Gen a = Gen { getGen :: Generator (RoseTree a) }
 
-instance Functor RoseGen where
-    fmap k gen = RoseGen $ fmap (fmap k) (getRoseGen gen)
+instance Functor Gen where
+    fmap k gen = Gen $ fmap (fmap k) (getGen gen)
 
-instance Monad RoseGen where
-    return = RoseGen . return . return
+instance Monad Gen where
+    return = Gen . return . return
 
-    gen >>= f = RoseGen $ helper (getRoseGen gen) (getRoseGen . f)
+    gen >>= f = Gen $ helper (getGen gen) (getGen . f)
         where helper m k = m >>= \y -> fmap joinRose $ sequence $ fmap k y
 
 ------------------------------------------------------------------------------
 -- Functions: Combinators
 ------------------------------------------------------------------------------
 
+-- | Generates some example values.
+sample' :: Gen a -> IO [a]
+sample' (Gen (MkGen m)) =
+  do rnd0 <- newStdGen
+     let rnds rnd = rnd1 : rnds rnd2 where (rnd1,rnd2) = split rnd
+     return [roseRoot (m r n) | (r,n) <- rnds rnd0 `zip` [0,2..20] ]
+
+-- | Generates some example values and prints them to 'stdout'.
+sample :: Show a => Gen a -> IO ()
+sample g =
+  do cases <- sample' g
+     mapM_ print cases
+
 -- | Generates a random element in the given inclusive range.
-choose :: (Random a, Integral a) => (a,a) -> RoseGen a
-choose rng = RoseGen $ MkGen (\r _ -> let (x,_) = randomR rng r in integralRoseTree x)
+choose :: (Random a, Integral a) => (a,a) -> Gen a
+choose rng = Gen $ MkGen (\r _ -> mktree r rng)
+
+mktree :: (Random a, Integral a) => StdGen -> (a, a) -> RoseTree a
+mktree r rng = filterRose (mkfilter rng) $ integralRoseTree x
+    where (x,_) = randomR rng r
+          mkfilter (a, b) y = y >= a && y <= b
 
 integralRoseTree :: Integral a => a -> RoseTree a
 integralRoseTree x = RoseTree x $ map integralRoseTree $ shrinkIntegral x

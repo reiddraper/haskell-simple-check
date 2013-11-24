@@ -12,9 +12,9 @@ Library
   HS-Source-Dirs:       src
   GHC-Options:          -Wall
   Exposed-Modules:      Test.SimpleCheck
-  Other-Modules:        Test.SimpleCheck.Internal
                       , Test.SimpleCheck.Arbitrary
                       , Test.SimpleCheck.Gen
+  Other-Modules:        Test.SimpleCheck.Internal
   Build-Depends:        base >= 4 && < 5
                       , random == 1.0.1.1
 
