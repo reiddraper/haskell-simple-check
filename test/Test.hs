@@ -1,7 +1,12 @@
 import Test.Tasty
-import Test.Tasty.QuickCheck as QC
+import Test.Tasty.QuickCheck as QC hiding (choose, sample')
+import Test.QuickCheck.Monadic (monadicIO, assert, run)
 
-import Data.List
+import Test.SimpleCheck.Gen
+    (
+      choose
+    , sample'
+    )
 
 main :: IO ()
 main = defaultMain tests
@@ -14,12 +19,14 @@ properties = testGroup "Properties" [qcProps]
 
 qcProps :: TestTree
 qcProps = testGroup "(checked by QuickCheck)"
-  [ QC.testProperty "sort == sort . reverse" $
-      \list -> sort (list :: [Int]) == sort (reverse list)
-  , QC.testProperty "Fermat's little theorem" $
-      \x -> ((x :: Integer)^7 - x) `mod` 7 == 0
-  -- the following property does not hold
-  , QC.testProperty "Fermat's last theorem" $
-      \x y z n ->
-        (n :: Integer) >= 3 QC.==> x^n + y^n /= (z^n :: Integer)
-  ]
+  [chooseSample]
+
+chooseSample :: TestTree
+chooseSample = QC.testProperty "choose respects bounds" $
+    \(a, b) -> monadicIO $ do
+        let mini = min a b :: Int
+        let maxi = max a b :: Int
+        bool <- run $ do
+            samples <- sample' $ choose (mini, maxi)
+            return $ all (\x -> x >= mini && x <= maxi) samples
+        assert bool
