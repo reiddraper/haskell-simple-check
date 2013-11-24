@@ -1,11 +1,14 @@
-{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFoldable, GADTs #-}
 
 module Test.SimpleCheck.Gen
     (
       RoseTree(..)
     , joinRose
     , roseRoot
+    , roseChildren
     , filterRose
+    , integralRoseTree
+    , uniqueRose
 
     , Gen(..)
     , choose
@@ -28,6 +31,14 @@ import System.Random
   , newStdGen
   )
 
+import Data.Set (empty, insert, notMember, singleton, Set)
+
+import Data.Monoid
+  (
+    mappend
+  , Monoid(..)
+  )
+
 import Control.Monad
   ( ap
   )
@@ -39,6 +50,7 @@ import Data.Traversable
 
 import Data.Foldable
   ( Foldable(..)
+  , foldMap
   )
 
 import Control.Applicative
@@ -88,6 +100,25 @@ roseChildren (RoseTree _root children) = children
 filterRose :: (a -> Bool) -> RoseTree a -> RoseTree a
 filterRose f (RoseTree root children) =
     RoseTree root $ map (filterRose f) $ filter (f . roseRoot) children
+
+------------------------------------------------------------------------------
+-- Type: UniqueRose
+------------------------------------------------------------------------------
+
+data UniqueRose a where
+    UniqueRose :: Ord a => a -> UniqueRose (RoseTree a)
+
+instance Foldable UniqueRose where
+    foldMap f (UniqueRose (RoseTree x [])) = f x
+    --foldMap f (UniqueRose (RoseTree x children)) = uniqueRose f (f x) (singleton x) [children]
+    foldMap f (UniqueRose (RoseTree x children)) = (f x) `mappend` (Prelude.foldr mappend mempty $ map (foldMap f) children)
+
+uniqueRose :: (Ord a, Monoid m) => (a -> m) -> m -> Set a -> [[RoseTree a]] -> m
+uniqueRose _f m _set [] = m
+uniqueRose f m set ([]:t) = uniqueRose f m set t
+uniqueRose f m set ((h:t):t2) = if notMember (roseRoot h) set
+                             then uniqueRose f (m `mappend` (f (roseRoot h))) (insert (roseRoot h) set) $ (roseChildren h):t:t2
+                             else uniqueRose f m set $ t:t2
 
 ------------------------------------------------------------------------------
 -- Type: Gen
