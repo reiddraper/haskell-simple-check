@@ -6,6 +6,7 @@ module Test.SimpleCheck.Gen
     , roseChildren
     , filterRose
 
+    , Generator(..)
     , Gen(..)
     , choose
     , sized
