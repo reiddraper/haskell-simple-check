@@ -9,6 +9,10 @@ module Test.SimpleCheck.Gen
     , Generator(..)
     , Gen(..)
     , choose
+    , oneof
+    , frequency
+    , elements
+
     , sized
 
     , sample
@@ -113,6 +117,30 @@ sample g =
 -- | Generates a random element in the given inclusive range.
 choose :: (Random a, Integral a) => (a,a) -> Gen a
 choose rng = Gen $ MkGen (\r _ -> mktree r rng)
+
+-- | Randomly uses one of the given generators. The input list
+-- must be non-empty.
+oneof :: [Gen a] -> Gen a
+oneof [] = error "QuickCheck.oneof used with empty list"
+oneof gs = choose (0,length gs - 1) >>= (gs !!)
+
+-- | Chooses one of the given generators, with a weighted random distribution.
+-- The input list must be non-empty.
+frequency :: [(Int, Gen a)] -> Gen a
+frequency [] = error "QuickCheck.frequency used with empty list"
+frequency xs0 = choose (1, tot) >>= (`pick` xs0)
+ where
+  tot = sum (map fst xs0)
+
+  pick n ((k,x):xs)
+    | n <= k    = x
+    | otherwise = pick (n-k) xs
+  pick _ _  = error "QuickCheck.pick used with empty list"
+
+-- | Generates one of the given values. The input list must be non-empty.
+elements :: [a] -> Gen a
+elements [] = error "QuickCheck.elements used with empty list"
+elements xs = (xs !!) `fmap` choose (0, length xs - 1)
 
 -- | Used to construct generators that depend on the size parameter.
 sized :: (Int -> Gen a) -> Gen a
