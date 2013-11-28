@@ -1,6 +1,8 @@
 module Test.SimpleCheck.Property
   (
     Testable(..)
+  , Property
+  , Result(..)
   ) where
 
 import Test.SimpleCheck.Gen

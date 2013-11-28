@@ -62,7 +62,7 @@ filterRose f (RoseTree root children) =
 -- Type: Gen
 ------------------------------------------------------------------------------
 
-newtype Generator a = MkGen {_unGen :: StdGen -> Int -> a} deriving (Show)
+newtype Generator a = MkGen {unGen :: StdGen -> Int -> a} deriving (Show)
 
 instance Functor Generator where
   fmap f (MkGen h) =
